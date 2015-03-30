@@ -5,6 +5,8 @@
     <title>WikiSpead</title>
     <script src="MediawikiJS.js"></script>
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
     
     <style type="text/css">
 	
@@ -12,7 +14,7 @@
 		height: 40px;
 		font-size: 26px;
 	}
-	#word > .container {
+	#word > .my_container {
 		vertical-align: middle;
 	}
 	.left {
@@ -39,24 +41,37 @@
 </head>
 <body>
 <div id="the_article"></div>
-<div id="word" class="blocktext">
-		<span class="left container"><span class="text"></span></span><span class="pivot container"></span><span class="right container"></span>
+<div class="container">
+	<div class="row">
+		<div class="col-md-3"></div>
+		<div id="word" class="col-md-6">
+			<span class="left my_container"><span class="text"></span></span><span class="pivot my_container"></span><span class="right my_container"></span>
+		</div>
+		<div class="col-md-3"></div>
+
 	</div>
-<div style="text-align:center;">
-	
-	<h1 id="the_word">Not ready</h1>
-	<button id="start">Start</button>
-	<button id="stop">Pause</button>
-	<button id="reset">Reset</button>
-	<br><br>
-	<div>
-		<input id="wiki_url">
-		<button id="load_url">Load article</button>
-	</div>
-	<br><br>
-	<div>
-		<input id="wpm" value="300">
-		<button id="load_wpm">Set WPM</button>
+</div>
+<div class="container">
+	<div class="row">
+		<div class="col-md-3"></div>
+		<div class="col-md-6">
+			<h1 id="the_word">Not ready</h1>
+			<button id="start">Start</button>
+			<button id="stop">Pause</button>
+			<button id="reset">Reset</button>
+			<br><br>
+			<div>
+				<input id="wiki_url">
+				<button id="load_url">Load article</button>
+			</div>
+			<br><br>
+			<div>
+				<input id="wpm" value="300">
+				<button id="load_wpm">Set WPM</button>
+			</div>
+		</div>
+		<div class="col-md-3"></div>
+
 	</div>
 </div>
 
