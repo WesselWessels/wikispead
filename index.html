@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>WikiSpead</title>
+    <script src="MediawikiJS.js"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    
+    <style type="text/css">
+	
+	#word {
+		height: 40px;
+		font-size: 26px;
+	}
+	#word > .container {
+		vertical-align: middle;
+	}
+	.left {
+		width: 100px;
+		display: inline-block;
+	}
+	.left > .text {
+		float: right;
+	}
+	.pivot {
+		color: red;
+	}
+
+	#text {
+		width: 100%;
+	}
+	.blocktext {
+	    margin-left: 45%;
+	    margin-right: auto;
+	    /*width: 20em*/
+	}
+	
+	</style>
+</head>
+<body>
+<div id="the_article"></div>
+<div id="word" class="blocktext">
+		<span class="left container"><span class="text"></span></span><span class="pivot container"></span><span class="right container"></span>
+	</div>
+<div style="text-align:center;">
+	
+	<h1 id="the_word">Not ready</h1>
+	<button id="start">Start</button>
+	<button id="stop">Pause</button>
+	<button id="reset">Reset</button>
+	<br><br>
+	<div>
+		<input id="wiki_url">
+		<button id="load_url">Load article</button>
+	</div>
+	<br><br>
+	<div>
+		<input id="wpm" value="300">
+		<button id="load_wpm">Set WPM</button>
+	</div>
+</div>
+
+<script>
+/*globals MediaWikiJS*/
+var pages;
+
+var plaintext;
+var text_array;
+var new_word_timer;
+var current_word = 0;
+var text_size = 0;
+var timer_interval = 200; //300WPS
+$(document).ready(function(){
+	drawWord("Waiting");
+	$("#start").click(function(e){
+		e.preventDefault();
+		start_text();
+	});
+
+	$("#stop").click(function(e){
+		e.preventDefault();
+		clearInterval(new_word_timer);
+	});
+	$("#reset").click(function(e){
+		e.preventDefault();
+		clearInterval(new_word_timer);
+		current_word = 0;
+		$("#the_word").text(pages.query.pages[Object.keys(pages.query.pages)].title);
+	});
+
+	$("#load_url").click(function(e){
+		e.preventDefault();
+		clearInterval(new_word_timer);
+		var url = $("#wiki_url").val();
+		var url_elements = url.split("/");
+		console.log(url_elements);
+		//url = 
+		console.log(url_elements[url_elements.length-1]);
+		load_new_article(url_elements[url_elements.length-1]);
+	});
+	$("#load_wpm").click(function(e){
+		e.preventDefault();
+		clearInterval(new_word_timer);
+		var wpm = $("#wpm").val();
+		var wps = wpm/60;
+		var spw = 1/wps;
+		var mspw = Math.round(spw*1000);
+		timer_interval = mspw;
+		console.log(mspw);
+		//var url_elements = url.split("/");
+		//console.log(url_elements);
+		//url = 
+		//console.log(url_elements[url_elements.length-1]);
+		//load_new_article(url_elements[url_elements.length-1]);
+	});
+});
+
+function load_new_article(article){
+		var mwjs = new MediaWikiJS('https://en.wikipedia.org', {action: 'query', prop: 'extracts', titles: article, redirects: true}, function (data) {
+	    'use strict';
+	     pages = data;
+	    //alert('Main page of Wikipedia last edited by: ' + pages[Object.keys(pages)[0]].revisions[0].user);
+	    //$("#the_article").html(strip(pages.query.pages[Object.keys(pages.query.pages)].extract));
+	    plaintext = strip(pages.query.pages[Object.keys(pages.query.pages)].extract);
+	    text_array = plaintext.replace( /\n/g, " " ).replace("  ", " ").replace("§", "").split(" ");
+	    text_size = text_array.length;
+	    //$("#the_word").text(pages.query.pages[Object.keys(pages.query.pages)].title);
+	    drawWord(pages.query.pages[Object.keys(pages.query.pages)].title);
+
+	   // new_word_timer=setInterval(function(){
+	   //  	if(current_word == text_size){
+	   //  		clearInterval(new_word_timer);
+	   //  	}
+	   //  	$("#the_word").text(text_array[current_word]);
+	   //  	current_word++;
+
+	   //  },200);
+
+		});
+	}	
+
+
+
+function start_text(){
+	clearInterval(new_word_timer);
+	 new_word_timer=setInterval(function(){
+    	if(current_word == text_size){
+    		clearInterval(new_word_timer);
+    	}
+    	//$("#the_word").text(text_array[current_word]);
+    	drawWord(text_array[current_word]);
+    	current_word++;
+
+    },timer_interval);
+}
+
+function strip(html){
+   var tmp = document.createElement("DIV");
+   tmp.innerHTML = html;
+   return tmp.textContent || tmp.innerText || "";
+}
+ function split_word (word) {
+    var pivot = 1;
+
+    switch (word.length) {
+        case 0:
+        case 1:
+            pivot = 0;
+            break;
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+            pivot = 1;
+            break;
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+            pivot = 2;
+            break;
+        case 10:
+        case 11:
+        case 12:
+        case 13:
+            pivot = 3;
+            break;
+        default:
+            pivot = 4;
+    }
+
+    return [word.substring(0, pivot), word.substring(pivot, pivot + 1), word.substring(pivot + 1)];
+}
+function drawWord(word){
+	var splitWord = split_word(word);
+    //var outputElement = this.model.outputElement;
+    
+    $('.left .text').html(splitWord[0]);
+   // $('').html(splitWord[0]);
+     $('.pivot').html(splitWord[1]);
+     $('.right').html(splitWord[2]);
+     // console.log(splitWord[0].length);
+     // console.log(splitWord[1].length);
+     // console.log(splitWord[2].length);
+}
+
+</script>
+
+</body>
+</html>
