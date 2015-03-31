@@ -13,7 +13,7 @@
 	
 	#word {
 		height: 40px;
-		font-size: 26px;
+		font-size: 34px;
 	}
 	#word > .my_container {
 		vertical-align: middle;
@@ -147,7 +147,7 @@ function load_new_article(article){
 	    //alert('Main page of Wikipedia last edited by: ' + pages[Object.keys(pages)[0]].revisions[0].user);
 	    //$("#the_article").html(strip(pages.query.pages[Object.keys(pages.query.pages)].extract));
 	    plaintext = strip(pages.query.pages[Object.keys(pages.query.pages)].extract);
-	    text_array = plaintext.replace( /\n/g, " " ).replace("  ", " ").replace("§", "").split(" ");
+	    text_array = plaintext.replace(/-/g, '- ').replace( /\n/g, " " ).replace("  ", " ").replace("§", "").split(" ");
 	    text_size = text_array.length;
 	    current_word = 0;
 	    //$("#the_word").text(pages.query.pages[Object.keys(pages.query.pages)].title);
