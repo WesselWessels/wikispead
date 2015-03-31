@@ -87,27 +87,34 @@ var new_word_timer;
 var current_word = 0;
 var text_size = 0;
 var timer_interval = 200; //300WPS
+var is_reading = false;
 $(document).ready(function(){
 	drawWord("Waiting");
 	$("#start").click(function(e){
 		e.preventDefault();
-		start_text();
+		if(is_reading==false){
+			is_reading = true;
+			start_text(timer_interval);
+		}
 	});
 
 	$("#stop").click(function(e){
 		e.preventDefault();
-		clearInterval(new_word_timer);
+		clearTimeout(new_word_timer);
+		is_reading = false;
 	});
 	$("#reset").click(function(e){
 		e.preventDefault();
-		clearInterval(new_word_timer);
+		clearTimeout(new_word_timer);
+		is_reading = false;
 		current_word = 0;
 		$("#the_word").text(pages.query.pages[Object.keys(pages.query.pages)].title);
 	});
 
 	$("#load_url").click(function(e){
 		e.preventDefault();
-		clearInterval(new_word_timer);
+		clearTimeout(new_word_timer);
+		is_reading = false;
 		var url = $("#wiki_url").val();
 		var url_elements = url.split("/");
 		console.log(url_elements);
@@ -117,7 +124,8 @@ $(document).ready(function(){
 	});
 	$("#load_wpm").click(function(e){
 		e.preventDefault();
-		clearInterval(new_word_timer);
+		clearTimeout(new_word_timer);
+		is_reading = false;
 		var wpm = $("#wpm").val();
 		var wps = wpm/60;
 		var spw = 1/wps;
@@ -141,6 +149,7 @@ function load_new_article(article){
 	    plaintext = strip(pages.query.pages[Object.keys(pages.query.pages)].extract);
 	    text_array = plaintext.replace( /\n/g, " " ).replace("  ", " ").replace("§", "").split(" ");
 	    text_size = text_array.length;
+	    current_word = 0;
 	    //$("#the_word").text(pages.query.pages[Object.keys(pages.query.pages)].title);
 	    drawWord(pages.query.pages[Object.keys(pages.query.pages)].title);
 
@@ -158,17 +167,34 @@ function load_new_article(article){
 
 
 
-function start_text(){
-	clearInterval(new_word_timer);
-	 new_word_timer=setInterval(function(){
+function start_text(delay){
+	//clearInterval(new_word_timer);
+	 new_word_timer=setTimeout(function(){
     	if(current_word == text_size){
-    		clearInterval(new_word_timer);
+    		clearTimeout(new_word_timer);
+			is_reading = false;
     	}
     	//$("#the_word").text(text_array[current_word]);
     	drawWord(text_array[current_word]);
+    	
+    	var next_word = text_array[current_word];
+    	var next_word_length = next_word.length;
+    	if(next_word.substring(next_word_length-1,next_word_length) == ','){
+    		start_text(Math.round(timer_interval*1.25));
+    	}
+    	else if(next_word.substring(next_word_length-1,next_word_length) == '.'){
+    		start_text(Math.round(timer_interval*1.5));
+    	}
+    	else{
+    		start_text(timer_interval);
+    	}
     	current_word++;
+    	
+    },delay);
+}
 
-    },timer_interval);
+function timeout_func(){
+
 }
 
 function strip(html){
