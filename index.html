@@ -71,6 +71,8 @@
 				<input id="wpm" value="300">
 				<button id="load_wpm">Set WPM</button>
 			</div>
+			<div id="index_headings">
+			</div>
 		</div>
 		<div class="col-md-3"></div>
 
@@ -80,7 +82,7 @@
 <script>
 /*globals MediaWikiJS*/
 var pages;
-
+var the_article;
 var plaintext;
 var text_array;
 var new_word_timer;
@@ -138,6 +140,14 @@ $(document).ready(function(){
 		//console.log(url_elements[url_elements.length-1]);
 		//load_new_article(url_elements[url_elements.length-1]);
 	});
+	$("#index_headings").on("click", ".my_heading", function(){
+		var index = $(this).attr('value');
+		//alert(index);
+		clearTimeout(new_word_timer);
+		is_reading = false;
+		current_word = index;
+		drawWord(text_array[current_word]);
+	});
 });
 
 function load_new_article(article){
@@ -146,10 +156,21 @@ function load_new_article(article){
 	     pages = data;
 	    //alert('Main page of Wikipedia last edited by: ' + pages[Object.keys(pages)[0]].revisions[0].user);
 	    //$("#the_article").html(strip(pages.query.pages[Object.keys(pages.query.pages)].extract));
-	    plaintext = strip(pages.query.pages[Object.keys(pages.query.pages)].extract);
+	    the_article = pages.query.pages[Object.keys(pages.query.pages)].extract.replace(/<h2>/g, '....HEADING....').replace(/<\/h2>/g,'');
+	    plaintext = strip(the_article);
 	    text_array = plaintext.replace(/-/g, '- ').replace( /\n/g, " " ).replace("  ", " ").replace("§", "").split(" ");
 	    text_size = text_array.length;
 	    current_word = 0;
+	    $("#index_headings").empty();
+	    $("#index_headings").append('<div><button class="my_heading" value="'+0+'">'+pages.query.pages[Object.keys(pages.query.pages)].title+'</button></div>');
+	    for(var i=0; i<text_size;i++){
+	    	if(text_array[i].length > 15){
+	    		if(text_array[i].substring(0,15) == "....HEADING...."){
+	    			$("#index_headings").append('<div><button class="my_heading" value="'+i+'">'+text_array[i].substring(15,text_array[i].length)+'</button></div>');
+	    			text_array[i] = text_array[i].substring(15,text_array[i].length);
+	    		}
+	    	}
+	    }
 	    //$("#the_word").text(pages.query.pages[Object.keys(pages.query.pages)].title);
 	    drawWord(pages.query.pages[Object.keys(pages.query.pages)].title);
 
