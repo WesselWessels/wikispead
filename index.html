@@ -107,6 +107,7 @@ var wpm = 300;
 var wps = wpm/60;
 var spw = 1/wps;
 var mspw = Math.round(spw*1000);
+var previous_time = window.performance.now();
 $(document).ready(function(){
 	drawWord("Waiting");
 	$("#start").click(function(e){
@@ -242,7 +243,9 @@ function start_text(delay){
     		clearTimeout(new_word_timer);
 			is_reading = false;
     	}
-    	//$("#the_word").text(text_array[current_word]);
+    	// console.log(delay + " " + (window.performance.now() - previous_time));
+    	// previous_time = window.performance.now();
+    	
     	drawWord(text_array[current_word]);
     	select_heading();
     	update_progress_bar();
