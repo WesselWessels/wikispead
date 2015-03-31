@@ -75,7 +75,7 @@
 			<div>
 				<input id="wpm" value="300">
 				<button id="load_wpm">Set WPM</button>
-				<div>Current WPM: <span id="current_wpm">300</span></div>
+				<div>Current WPM: <span id="current_wpm">300</span> Time: <span id="approx_time"></span></div>
 			</div>
 			<div class="progress">
 			    <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%"></div>
@@ -102,6 +102,11 @@ var timer_interval = 200; //300WPS
 var is_reading = false;
 var headings;
 var cur_heading = 0;
+var time_of_document = 0;
+var wpm = 300;
+var wps = wpm/60;
+var spw = 1/wps;
+var mspw = Math.round(spw*1000);
 $(document).ready(function(){
 	drawWord("Waiting");
 	$("#start").click(function(e){
@@ -142,12 +147,13 @@ $(document).ready(function(){
 		e.preventDefault();
 		clearTimeout(new_word_timer);
 		is_reading = false;
-		var wpm = $("#wpm").val();
+		wpm = $("#wpm").val();
 		$("#current_wpm").text(wpm);
-		var wps = wpm/60;
-		var spw = 1/wps;
-		var mspw = Math.round(spw*1000);
+		wps = wpm/60;
+		spw = 1/wps;
+		mspw = Math.round(spw*1000);
 		timer_interval = mspw;
+		update_time();
 		console.log(mspw);
 		//var url_elements = url.split("/");
 		//console.log(url_elements);
@@ -179,6 +185,7 @@ function load_new_article(article){
 	    text_array = plaintext.replace(/-/g, '- ').replace( /\n/g, " " ).replace("  ", " ").replace("§", "").split(" ");
 	    text_size = text_array.length;
 	    current_word = 0;
+	    update_time();
 	    $("#index_headings").empty();
 	    $("#index_headings").append('<div><button class="my_heading cur_heading" id="heading_0" value="'+0+'">'+pages.query.pages[Object.keys(pages.query.pages)].title+'</button></div>');
 	    headings = new Array();
@@ -212,6 +219,19 @@ function update_progress_bar(){
 	percentage = percentage.toFixed(2);
 	$(".progress-bar").css('width', percentage+'%');
 	//console.log(percentage);
+}
+
+function update_time(){
+	time_of_document = text_size/wpm;
+	var minutes = Math.floor(time_of_document);
+	var seconds = Math.floor((time_of_document - minutes)*60);
+	console.log(minutes+":"+seconds);
+	if(seconds < 10){
+		$("#approx_time").text(minutes+":0"+seconds);
+	}
+	else{
+		$("#approx_time").text(minutes+":"+seconds);
+	}
 }
 
 
