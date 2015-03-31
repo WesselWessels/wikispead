@@ -2,17 +2,20 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>WikiSpead</title>
     <script src="MediawikiJS.js"></script>
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
     
     <style type="text/css">
 	
 	#word {
 		height: 40px;
-		font-size: 26px;
+		font-size: 34px;
 	}
-	#word > .container {
+	#word > .my_container {
 		vertical-align: middle;
 	}
 	.left {
@@ -34,63 +37,106 @@
 	    margin-right: auto;
 	    /*width: 20em*/
 	}
+	.cur_heading{
+		color: green;
+	}
 	
 	</style>
 </head>
 <body>
-<div id="the_article"></div>
-<div id="word" class="blocktext">
-		<span class="left container"><span class="text"></span></span><span class="pivot container"></span><span class="right container"></span>
+
+<div class="container">
+	<div class="row">
+		<div class="col-md-3"></div>
+		<div id="word" class="col-md-6">
+			<span class="left my_container"><span class="text"></span></span><span class="pivot my_container"></span><span class="right my_container"></span>
+		</div>
+		<div class="col-md-3"></div>
+
 	</div>
-<div style="text-align:center;">
-	
-	<h1 id="the_word">Not ready</h1>
-	<button id="start">Start</button>
-	<button id="stop">Pause</button>
-	<button id="reset">Reset</button>
-	<br><br>
-	<div>
-		<input id="wiki_url">
-		<button id="load_url">Load article</button>
-	</div>
-	<br><br>
-	<div>
-		<input id="wpm" value="300">
-		<button id="load_wpm">Set WPM</button>
+</div>
+<br><br>
+<div class="container">
+	<div class="row">
+		<div class="col-md-3"></div>
+		<div class="col-md-6">
+			<!-- <h1 id="the_word">Not ready</h1> -->
+			<button id="start">Start</button>
+			<button id="stop">Pause</button>
+			<button id="reset">Reset</button>
+			<br><br>
+			<div>
+				<input id="wiki_url">
+				<button id="load_url">Load article</button>
+			</div>
+			<div>
+				Current article: <span id="current_article">None</span>
+			</div>
+			<div>
+				<input id="wpm" value="300">
+				<button id="load_wpm">Set WPM</button>
+				<div>Current WPM: <span id="current_wpm">300</span> Time: <span id="approx_time"></span></div>
+			</div>
+			<div class="progress">
+			    <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%"></div>
+			  </div>
+			<h3>Table of Contents</h3>
+			<div id="index_headings">
+			</div>
+		</div>
+		<div class="col-md-3"></div>
+
 	</div>
 </div>
 
 <script>
 /*globals MediaWikiJS*/
 var pages;
-
+var the_article;
 var plaintext;
 var text_array;
 var new_word_timer;
 var current_word = 0;
 var text_size = 0;
 var timer_interval = 200; //300WPS
+var is_reading = false;
+var headings;
+var cur_heading = 0;
+var time_of_document = 0;
+var wpm = 300;
+var wps = wpm/60;
+var spw = 1/wps;
+var mspw = Math.round(spw*1000);
+var previous_time = window.performance.now();
 $(document).ready(function(){
 	drawWord("Waiting");
 	$("#start").click(function(e){
 		e.preventDefault();
-		start_text();
+		if(is_reading==false){
+			is_reading = true;
+			start_text(timer_interval);
+		}
 	});
 
 	$("#stop").click(function(e){
 		e.preventDefault();
-		clearInterval(new_word_timer);
+		clearTimeout(new_word_timer);
+		is_reading = false;
 	});
 	$("#reset").click(function(e){
 		e.preventDefault();
-		clearInterval(new_word_timer);
+		clearTimeout(new_word_timer);
+		is_reading = false;
 		current_word = 0;
-		$("#the_word").text(pages.query.pages[Object.keys(pages.query.pages)].title);
+		select_heading();
+		update_progress_bar();
+		drawWord(pages.query.pages[Object.keys(pages.query.pages)].title);
 	});
 
 	$("#load_url").click(function(e){
 		e.preventDefault();
-		clearInterval(new_word_timer);
+		clearTimeout(new_word_timer);
+		is_reading = false;
 		var url = $("#wiki_url").val();
 		var url_elements = url.split("/");
 		console.log(url_elements);
@@ -100,18 +146,32 @@ $(document).ready(function(){
 	});
 	$("#load_wpm").click(function(e){
 		e.preventDefault();
-		clearInterval(new_word_timer);
-		var wpm = $("#wpm").val();
-		var wps = wpm/60;
-		var spw = 1/wps;
-		var mspw = Math.round(spw*1000);
+		clearTimeout(new_word_timer);
+		is_reading = false;
+		wpm = $("#wpm").val();
+		$("#current_wpm").text(wpm);
+		wps = wpm/60;
+		spw = 1/wps;
+		mspw = Math.round(spw*1000);
 		timer_interval = mspw;
+		update_time();
 		console.log(mspw);
 		//var url_elements = url.split("/");
 		//console.log(url_elements);
 		//url = 
 		//console.log(url_elements[url_elements.length-1]);
 		//load_new_article(url_elements[url_elements.length-1]);
+	});
+	$("#index_headings").on("click", ".my_heading", function(){
+		var index = $(this).attr('value');
+		//alert(index);
+		console.log(index);
+		clearTimeout(new_word_timer);
+		is_reading = false;
+		current_word = index;
+		select_heading();
+		update_progress_bar();
+		drawWord(text_array[current_word]);
 	});
 });
 
@@ -121,12 +181,28 @@ function load_new_article(article){
 	     pages = data;
 	    //alert('Main page of Wikipedia last edited by: ' + pages[Object.keys(pages)[0]].revisions[0].user);
 	    //$("#the_article").html(strip(pages.query.pages[Object.keys(pages.query.pages)].extract));
-	    plaintext = strip(pages.query.pages[Object.keys(pages.query.pages)].extract);
-	    text_array = plaintext.replace( /\n/g, " " ).replace("  ", " ").replace("§", "").split(" ");
+	    the_article = pages.query.pages[Object.keys(pages.query.pages)].extract.replace(/<h2>/g, '....HEADING....').replace(/<\/h2>/g,'');
+	    plaintext = strip(the_article);
+	    text_array = plaintext.replace(/-/g, '- ').replace( /\n/g, " " ).replace("  ", " ").replace("§", "").split(" ");
 	    text_size = text_array.length;
+	    current_word = 0;
+	    update_time();
+	    $("#index_headings").empty();
+	    $("#index_headings").append('<div><button class="my_heading cur_heading" id="heading_0" value="'+0+'">'+pages.query.pages[Object.keys(pages.query.pages)].title+'</button></div>');
+	    headings = new Array();
+	    headings.push(0);
+	    for(var i=0; i<text_size;i++){
+	    	if(text_array[i].length > 15){
+	    		if(text_array[i].substring(0,15) == "....HEADING...."){
+	    			$("#index_headings").append('<div><button class="my_heading" id="heading_'+i+'" value="'+i+'">'+text_array[i].substring(15,text_array[i].length)+'</button></div>');
+	    			text_array[i] = text_array[i].substring(15,text_array[i].length);
+	    			headings.push(i);
+	    		}
+	    	}
+	    }
 	    //$("#the_word").text(pages.query.pages[Object.keys(pages.query.pages)].title);
 	    drawWord(pages.query.pages[Object.keys(pages.query.pages)].title);
-
+	    $("#current_article").text(pages.query.pages[Object.keys(pages.query.pages)].title);
 	   // new_word_timer=setInterval(function(){
 	   //  	if(current_word == text_size){
 	   //  		clearInterval(new_word_timer);
@@ -139,19 +215,73 @@ function load_new_article(article){
 		});
 	}	
 
+function update_progress_bar(){
+	var percentage = (current_word/text_array.length*100);
+	percentage = percentage.toFixed(2);
+	$(".progress-bar").css('width', percentage+'%');
+	//console.log(percentage);
+}
+
+function update_time(){
+	time_of_document = text_size/wpm;
+	var minutes = Math.floor(time_of_document);
+	var seconds = Math.floor((time_of_document - minutes)*60);
+	console.log(minutes+":"+seconds);
+	if(seconds < 10){
+		$("#approx_time").text(minutes+":0"+seconds);
+	}
+	else{
+		$("#approx_time").text(minutes+":"+seconds);
+	}
+}
 
 
-function start_text(){
-	clearInterval(new_word_timer);
-	 new_word_timer=setInterval(function(){
+function start_text(delay){
+	//clearInterval(new_word_timer);
+	 new_word_timer=setTimeout(function(){
     	if(current_word == text_size){
-    		clearInterval(new_word_timer);
+    		clearTimeout(new_word_timer);
+			is_reading = false;
     	}
-    	//$("#the_word").text(text_array[current_word]);
+    	// console.log(delay + " " + (window.performance.now() - previous_time));
+    	// previous_time = window.performance.now();
+    	
     	drawWord(text_array[current_word]);
+    	select_heading();
+    	update_progress_bar();
+    	var next_word = text_array[current_word];
+    	var next_word_length = next_word.length;
+    	if(next_word.substring(next_word_length-1,next_word_length) == ','){
+    		start_text(Math.round(timer_interval*1.25));
+    	}
+    	else if(next_word.substring(next_word_length-1,next_word_length) == '.'){
+    		start_text(Math.round(timer_interval*1.5));
+    	}
+    	else{
+    		start_text(timer_interval);
+    	}
     	current_word++;
+    	
+    },delay);
+}
 
-    },timer_interval);
+function select_heading(){
+	for(var i = 1; i < headings.length; i++){
+		if(current_word < headings[i]){
+			//console.log(i-1 + " " + headings[i-1]);
+			var temp_heading = i-1;
+			if(cur_heading != temp_heading){
+				$(".my_heading").removeClass("cur_heading");
+				$("#heading_"+headings[temp_heading]).addClass("cur_heading");
+				cur_heading = temp_heading;
+			}
+			break;
+		}
+	}
+}
+
+function timeout_func(){
+
 }
 
 function strip(html){
