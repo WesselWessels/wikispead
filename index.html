@@ -100,15 +100,24 @@
 			<h3>Table of Contents</h3>
 			<div id="index_headings">
 			</div>
+			<h3>Links</h3>
+			<div id="index_links">
+			</div>
+
 		</div>
 		<div class="col-md-3"></div>
 
 	</div>
+
 </div>
+<!-- <iframe id="wiki" src="http://en.wikipedia.org" width="100%" height="512"></iframe> -->
 
 <script>
 /*globals MediaWikiJS*/
 var pages;
+var my_links;
+var link_text;
+var link_array;
 var the_article;
 var plaintext;
 var text_array;
@@ -126,6 +135,8 @@ var spw = 1/wps;
 var mspw = Math.round(spw*1000);
 //var previous_time = window.performance.now();
 $(document).ready(function(){
+	
+
 	drawWord("Waiting");
 	$("#start").click(function(e){
 		e.preventDefault();
@@ -190,9 +201,18 @@ $(document).ready(function(){
 		update_progress_bar();
 		drawWord(text_array[current_word]);
 	});
+	$("#index_links").on("click", ".my_link", function(){
+		var link = $(this).attr('value');
+		//alert(index);
+		console.log(link);
+		clearTimeout(new_word_timer);
+		is_reading = false;
+		load_new_article(link);
+	});
 });
 
 function load_new_article(article){
+		drawWord("Loading");
 		var mwjs = new MediaWikiJS('https://'+ $("select").val() +'.wikipedia.org', {action: 'query', prop: 'extracts', titles: article, redirects: true}, function (data) {
 	    'use strict';
 	     pages = data;
@@ -228,9 +248,39 @@ function load_new_article(article){
 	   //  	current_word++;
 
 	   //  },200);
-
+		get_links(article);
 		});
-	}	
+		
+	}
+
+function get_links(article){
+	link_array = new Array();
+	$("#index_links").empty();
+	//var temp_counter = 0;
+	var mwjs = new MediaWikiJS('https://'+ $("select").val() +'.wikipedia.org', {action: 'query', prop: 'revisions', rvprop:'content', titles: article, redirects: true}, function (data) {
+	    'use strict';
+	     my_links = data;
+	     link_text = my_links.query.pages[Object.keys(my_links.query.pages)].revisions[0]['*'].match(/\[\[(.*?)\]\]/g);
+	     for(var i = 0; i < link_text.length; i++){
+	     	link_text[i] = link_text[i].replace(/\[\[/g,'').replace(/\]\]/g,'');
+	     	var temp_text = link_text[i].split(':');
+	     	if(temp_text.length == 1){
+	     		var a_link = link_text[i].split('|')[0];
+	     		
+	     		if($.inArray(a_link, link_array) === -1){
+	     			$("#index_links").append('<div><a href="#" class="my_link" value="'+a_link+'">'+a_link+'</a></div>');
+	     			link_array.push(a_link);
+	     		}
+	     	}
+	     	//link_text[i] = temp_text[temp_text.length-1];
+	     	// temp_text = link_text[i].split('|');
+	     	// link_text[i] = temp_text[0];
+	     }
+		});
+	$.each(link_array, function(i, el){
+   	 if($.inArray(el, uniqueNames) === -1) uniqueNames.push(el);
+	});
+}		
 
 function update_progress_bar(){
 	var percentage = (current_word/text_array.length*100);
